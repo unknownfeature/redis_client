@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Redis Cloud Console</title>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
+
+    <script>
+
+        function load() {
+            let $command = $('#command-input');
+            $command.on('keydown', submitCommand);
+            sessionStorage.setItem('db', 0);
+            $command.focus();
+        }
+
+        function submitCommand(e) {
+            let code = (e.keyCode ? e.keyCode : e.which);
+            if (code !== 13) return
+            $.ajax(
+                {
+                    data: JSON.stringify({
+                        'command': e.target.value.replace(/\s+/, ' '),
+                        'db': parseInt(sessionStorage.getItem('db'), 10)
+                    }),
+                    url: 'redis',
+                    type: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                }
+            ).done(function (d, status) {
+                if (status === 'success') {
+                    let data = JSON.parse(d);
+                    let history = $('#history');
+                    history.append('<div>' + data['history'].input + '</div>');
+                    history.append('<div>' + data['history'].output + '</div>');
+                    let prompt = $('#prompt');
+                    prompt.empty();
+                    prompt.text(data['prompt'] + '>');
+                    let $command = $('#command-input');
+                    $command.val('')
+                    $command.focus()
+                    sessionStorage.setItem('db', data['db']);
+                }
+
+            })
+                .fail(function (xhr, status, error) {
+                    let snackbar = $('#snackbar');
+                    snackbar.text(error);
+                    snackbar.addClass('show');
+                    console.log(error);
+                    setTimeout(function () {
+                        snackbar.removeClass('show')
+                    }, 3000);
+
+                });
+
+        }
+    </script>
+    <style>
+        .console-container {
+            background: black;
+            color: white;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: Monaco, 'Lucida Console', 'Lucida Grande', monospace;
+        }
+
+        .console-history {
+            height: 75%;
+
+        }
+
+        .console-input {
+            position: relative;
+            width: 100%;
+        }
+
+        #command-input {
+            width: 75%;
+            background: black;
+            color: white;
+            /*font-size: 1.25em;*/
+            border: none;
+            outline: none;
+            margin-top: 5px;
+            font-family: Monaco, 'Lucida Console', 'Lucida Grande', monospace;
+
+        }
+
+        /*input {*/
+        /*    width: 75%;*/
+        /*}*/
+        #prompt {
+            width: 25%;
+            margin-right: 15px;
+        }
+
+        #snackbar {
+            visibility: hidden;
+            min-width: 100%; /* Set a default minimum width */
+            background-color: white; /* Black background color */
+            color: darkred; /* White text color */
+            text-align: center; /* Centered text */
+            border-radius: 2px; /* Rounded borders */
+            padding: 16px; /* Padding */
+            position: fixed; /* Sit on top of the screen */
+            z-index: 1; /* Add a z-index if needed */
+            left: 0; /* Center the snackbar */
+            top: 30px; /* 30px from the bottom */
+        }
+
+        #snackbar.show {
+            visibility: visible; /* Show the snackbar */
+            /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+            However, delay the fade out process for 2.5 seconds */
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @-webkit-keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class='console-container' onload='load()'>
+<div id='snackbar'></div>
+<div id='history' class='console-history'>
+</div>
+<div id='input' class='console-input'>
+    <span id='prompt'>{{.Prompt}}&gt;</span><input type='text' id='command-input'>
+</div>
+
+
+</body>
+</html>

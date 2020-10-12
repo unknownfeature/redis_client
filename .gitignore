@@ -1,0 +1,5 @@
+/.idea/
+/target/
+/dist/
+/vendor/
+go.mod

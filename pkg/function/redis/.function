@@ -1,0 +1,3 @@
+function_name=Execute
+trigger=http
+memory=256
